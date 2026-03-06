@@ -823,6 +823,7 @@ function Wave:CreateWindow(config)
 			config = config or {}
 			local color = config.Color or Color3.fromRGB(255, 255, 255)
 			local opened = false
+			local built = false
 
 			local el = makeElement()
 
@@ -862,11 +863,53 @@ function Wave:CreateWindow(config)
 
 			local H, S, V = Color3.toHSV(color)
 			local ColorPicker = { Value = color }
+			local svDrag, hueDrag = false, false
+			local svBox, svKnob, hueBar, hueKnob, hexBox
+
+			local function updateColor()
+				local c = Color3.fromHSV(H, S, V)
+				ColorPicker.Value = c
+				preview.BackgroundColor3 = c
+				accent.BackgroundColor3 = c
+				if svBox then svBox.BackgroundColor3 = Color3.fromHSV(H, 1, 1) end
+				if svKnob then svKnob.Position = UDim2.new(S, 0, 1 - V, 0) end
+				if hueKnob then hueKnob.Position = UDim2.new(H, 0, 0.5, 0) end
+				if hexBox then hexBox.Text = string.format("%02X%02X%02X", math.round(c.R*255), math.round(c.G*255), math.round(c.B*255)) end
+				if config.Callback then task.spawn(config.Callback, c) end
+				if config.Flag then getgenv()[config.Flag] = c end
+			end
+
+			UserInputService.InputEnded:Connect(function(i)
+				if i.UserInputType == Enum.UserInputType.MouseButton1 then
+					svDrag = false
+					hueDrag = false
+				end
+			end)
+
+			RunService.RenderStepped:Connect(function()
+				if not opened then return end
+				local mp = UserInputService:GetMouseLocation()
+				if svDrag and svBox then
+					local abs = svBox.AbsolutePosition
+					local sz = svBox.AbsoluteSize
+					S = math.clamp((mp.X - abs.X) / sz.X, 0, 1)
+					V = 1 - math.clamp((mp.Y - abs.Y) / sz.Y, 0, 1)
+					updateColor()
+				elseif hueDrag and hueBar then
+					local abs = hueBar.AbsolutePosition
+					local sz = hueBar.AbsoluteSize
+					H = math.clamp((mp.X - abs.X) / sz.X, 0, 1)
+					updateColor()
+				end
+			end)
 
 			local function buildPicker()
+				if built then return end
+				built = true
+
 				create("UIPadding", { PaddingAll = UDim.new(0, 10) }).Parent = pickerFrame
 
-				local svBox = create("ImageLabel", {
+				svBox = create("ImageLabel", {
 					Size = UDim2.new(1, 0, 0, 120),
 					BackgroundColor3 = Color3.fromHSV(H, 1, 1),
 					BorderSizePixel = 0,
@@ -876,7 +919,7 @@ function Wave:CreateWindow(config)
 					Parent = pickerFrame,
 				}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
 
-				local svKnob = create("Frame", {
+				svKnob = create("Frame", {
 					Size = UDim2.new(0, 10, 0, 10),
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Position = UDim2.new(S, 0, 1 - V, 0),
@@ -889,7 +932,7 @@ function Wave:CreateWindow(config)
 					create("UIStroke", { Color = Color3.fromRGB(0,0,0), Thickness = 1.5 }),
 				})
 
-				local hueBar = create("ImageLabel", {
+				hueBar = create("ImageLabel", {
 					Size = UDim2.new(1, 0, 0, 16),
 					Position = UDim2.new(0, 0, 0, 130),
 					BorderSizePixel = 0,
@@ -899,7 +942,7 @@ function Wave:CreateWindow(config)
 					Parent = pickerFrame,
 				}, { create("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 
-				local hueKnob = create("Frame", {
+				hueKnob = create("Frame", {
 					Size = UDim2.new(0, 8, 1, 2),
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Position = UDim2.new(H, 0, 0.5, 0),
@@ -912,7 +955,7 @@ function Wave:CreateWindow(config)
 					create("UIStroke", { Color = Color3.fromRGB(0,0,0), Thickness = 1 }),
 				})
 
-				local hexBox = create("TextBox", {
+				hexBox = create("TextBox", {
 					Text = string.format("%02X%02X%02X", math.round(color.R*255), math.round(color.G*255), math.round(color.B*255)),
 					Font = Enum.Font.Code,
 					TextSize = 12,
@@ -929,49 +972,11 @@ function Wave:CreateWindow(config)
 					create("UIStroke", { Color = THEME.Stroke, Thickness = 1 }),
 				})
 
-				local function updateColor()
-					local c = Color3.fromHSV(H, S, V)
-					ColorPicker.Value = c
-					preview.BackgroundColor3 = c
-					accent.BackgroundColor3 = c
-					svBox.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-					svKnob.Position = UDim2.new(S, 0, 1 - V, 0)
-					hueKnob.Position = UDim2.new(H, 0, 0.5, 0)
-					hexBox.Text = string.format("%02X%02X%02X", math.round(c.R*255), math.round(c.G*255), math.round(c.B*255))
-					if config.Callback then task.spawn(config.Callback, c) end
-					if config.Flag then getgenv()[config.Flag] = c end
-				end
-
-				local svDrag, hueDrag = false, false
-
 				local svBtn = create("TextButton", { Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=13, Parent=svBox })
 				svBtn.MouseButton1Down:Connect(function() svDrag = true end)
 
 				local hueBtn = create("TextButton", { Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=13, Parent=hueBar })
 				hueBtn.MouseButton1Down:Connect(function() hueDrag = true end)
-
-				UserInputService.InputEnded:Connect(function(i)
-					if i.UserInputType == Enum.UserInputType.MouseButton1 then
-						svDrag = false
-						hueDrag = false
-					end
-				end)
-
-				RunService.RenderStepped:Connect(function()
-					local mp = UserInputService:GetMouseLocation()
-					if svDrag then
-						local abs = svBox.AbsolutePosition
-						local sz = svBox.AbsoluteSize
-						S = math.clamp((mp.X - abs.X) / sz.X, 0, 1)
-						V = 1 - math.clamp((mp.Y - abs.Y) / sz.Y, 0, 1)
-						updateColor()
-					elseif hueDrag then
-						local abs = hueBar.AbsolutePosition
-						local sz = hueBar.AbsoluteSize
-						H = math.clamp((mp.X - abs.X) / sz.X, 0, 1)
-						updateColor()
-					end
-				end)
 
 				hexBox.FocusLost:Connect(function()
 					local hex = hexBox.Text:gsub("#","")
@@ -1003,11 +1008,6 @@ function Wave:CreateWindow(config)
 					tween(pickerFrame, { Size = UDim2.new(1, 0, 0, 192) }, 0.2)
 				else
 					tween(pickerFrame, { Size = UDim2.new(1, 0, 0, 0) }, 0.2)
-					task.delay(0.2, function()
-						for _, c in ipairs(pickerFrame:GetChildren()) do
-							if not c:IsA("UICorner") and not c:IsA("UIStroke") then c:Destroy() end
-						end
-					end)
 				end
 			end)
 
