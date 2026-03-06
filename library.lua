@@ -1,4 +1,5 @@
-local Wave = {}
+getgenv().Wave = {}
+local Wave = getgenv().Wave
 Wave.__index = Wave
 
 local TweenService = game:GetService("TweenService")
@@ -145,7 +146,7 @@ function Wave:CreateWindow(config)
 	if subtitle ~= "" then
 		TitleLabel.Text = windowName .. "  •  " .. subtitle
 		TitleLabel.TextColor3 = THEME.SubText
-		local bold = create("TextLabel", {
+		create("TextLabel", {
 			Text = windowName,
 			Font = Enum.Font.GothamBold,
 			TextSize = 15,
@@ -377,14 +378,14 @@ function Wave:CreateWindow(config)
 				BorderSizePixel = 0,
 				Parent = TabContent,
 			})
-			local line = create("Frame", {
+			create("Frame", {
 				Size = UDim2.new(0.42, 0, 0, 1),
 				Position = UDim2.new(0, 0, 0.5, 0),
 				BackgroundColor3 = THEME.Stroke,
 				BorderSizePixel = 0,
 				Parent = sec,
 			})
-			local line2 = create("Frame", {
+			create("Frame", {
 				Size = UDim2.new(0.42, 0, 0, 1),
 				Position = UDim2.new(0.58, 0, 0.5, 0),
 				BackgroundColor3 = THEME.Stroke,
@@ -408,10 +409,16 @@ function Wave:CreateWindow(config)
 			config = config or {}
 			local el = makeElement(UDim2.new(1, 0, 0, 0))
 			el.AutomaticSize = Enum.AutomaticSize.Y
-			create("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }, )
-				.Parent = el
-			local layout = create("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder })
-			layout.Parent = el
+			create("UIPadding", {
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+			}).Parent = el
+			create("UIListLayout", {
+				Padding = UDim.new(0, 4),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}).Parent = el
 			create("TextLabel", {
 				Text = config.Title or "",
 				Font = Enum.Font.GothamBold,
@@ -441,7 +448,6 @@ function Wave:CreateWindow(config)
 		function Tab:CreateButton(config)
 			config = config or {}
 			local el = makeElement()
-			el.BackgroundColor3 = THEME.Element
 
 			local accent = create("Frame", {
 				Size = UDim2.new(0, 3, 0.6, 0),
@@ -470,9 +476,7 @@ function Wave:CreateWindow(config)
 			btn.MouseButton1Click:Connect(function()
 				tween(accent, { BackgroundColor3 = THEME.Success }, 0.1)
 				task.delay(0.3, function() tween(accent, { BackgroundColor3 = THEME.Accent }, 0.2) end)
-				if config.Callback then
-					task.spawn(config.Callback)
-				end
+				if config.Callback then task.spawn(config.Callback) end
 			end)
 		end
 
@@ -490,6 +494,7 @@ function Wave:CreateWindow(config)
 			}, { create("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 
 			makeLabel(el, config.Name or "Toggle")
+
 			if config.Description then
 				makeLabel(el, config.Description, Enum.Font.Gotham, 11, THEME.SubText, nil,
 					UDim2.new(0, 12, 0.5, 0), UDim2.new(0.6, -16, 0.5, 0))
@@ -514,13 +519,6 @@ function Wave:CreateWindow(config)
 				Parent = track,
 			}, { create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 
-			local btn = create("TextButton", {
-				Text = "",
-				Size = UDim2.new(1, 0, 1, 0),
-				BackgroundTransparency = 1,
-				Parent = el,
-			})
-
 			local Toggle = { Value = value }
 
 			local function update(v)
@@ -531,6 +529,13 @@ function Wave:CreateWindow(config)
 				if config.Callback then task.spawn(config.Callback, v) end
 				if config.Flag then getgenv()[config.Flag] = v end
 			end
+
+			local btn = create("TextButton", {
+				Text = "",
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Parent = el,
+			})
 
 			btn.MouseButton1Click:Connect(function() update(not Toggle.Value) end)
 			btn.MouseEnter:Connect(function() tween(el, { BackgroundColor3 = THEME.ElementHover }, 0.12) end)
@@ -557,7 +562,8 @@ function Wave:CreateWindow(config)
 				Parent = el,
 			}, { create("UICorner", { CornerRadius = UDim.new(0, 4) }) })
 
-			makeLabel(el, config.Name or "Slider", nil, nil, nil, nil, UDim2.new(0, 12, 0, 6), UDim2.new(0.7, -12, 0, 18))
+			makeLabel(el, config.Name or "Slider", nil, nil, nil, nil,
+				UDim2.new(0, 12, 0, 6), UDim2.new(0.7, -12, 0, 18))
 
 			local valLabel = create("TextLabel", {
 				Text = tostring(value),
@@ -577,9 +583,7 @@ function Wave:CreateWindow(config)
 				BackgroundColor3 = THEME.ToggleOff,
 				BorderSizePixel = 0,
 				Parent = el,
-			}, {
-				create("UICorner", { CornerRadius = UDim.new(1, 0) }),
-			})
+			}, { create("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 
 			local fill = create("Frame", {
 				Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
@@ -621,9 +625,7 @@ function Wave:CreateWindow(config)
 				Parent = el,
 			})
 
-			btn.MouseButton1Down:Connect(function()
-				sliding = true
-			end)
+			btn.MouseButton1Down:Connect(function() sliding = true end)
 			UserInputService.InputEnded:Connect(function(i)
 				if i.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end
 			end)
@@ -737,9 +739,8 @@ function Wave:CreateWindow(config)
 					BorderSizePixel = 0,
 					ZIndex = 11,
 					Parent = dropList,
-				}, {
-					create("UICorner", { CornerRadius = UDim.new(0, 6) }),
-				})
+				}, { create("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+
 				optBtn.MouseButton1Click:Connect(function()
 					setVal(opt)
 					for _, b in ipairs(dropList:GetChildren()) do
@@ -804,17 +805,14 @@ function Wave:CreateWindow(config)
 
 			local Input = { Value = box.Text }
 
-			box.FocusLost:Connect(function(enter)
+			box.FocusLost:Connect(function()
 				Input.Value = box.Text
-				tween(box, { UIStroke = nil }, 0)
 				if config.Callback then task.spawn(config.Callback, box.Text) end
 				if config.Flag then getgenv()[config.Flag] = box.Text end
+				tween(box, { BackgroundColor3 = THEME.TabBar }, 0.1)
 			end)
 			box.Focused:Connect(function()
 				tween(box, { BackgroundColor3 = THEME.ElementHover }, 0.1)
-			end)
-			box.FocusLost:Connect(function()
-				tween(box, { BackgroundColor3 = THEME.TabBar }, 0.1)
 			end)
 
 			if config.Flag then getgenv()[config.Flag] = box.Text end
@@ -866,8 +864,7 @@ function Wave:CreateWindow(config)
 			local ColorPicker = { Value = color }
 
 			local function buildPicker()
-				local pad = create("UIPadding", { PaddingAll = UDim.new(0, 10) })
-				pad.Parent = pickerFrame
+				create("UIPadding", { PaddingAll = UDim.new(0, 10) }).Parent = pickerFrame
 
 				local svBox = create("ImageLabel", {
 					Size = UDim2.new(1, 0, 0, 120),
@@ -920,7 +917,6 @@ function Wave:CreateWindow(config)
 					Font = Enum.Font.Code,
 					TextSize = 12,
 					TextColor3 = THEME.Text,
-					PlaceholderColor3 = THEME.SubText,
 					BackgroundColor3 = THEME.Element,
 					BorderSizePixel = 0,
 					Size = UDim2.new(1, 0, 0, 28),
@@ -950,10 +946,16 @@ function Wave:CreateWindow(config)
 
 				local svBtn = create("TextButton", { Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=13, Parent=svBox })
 				svBtn.MouseButton1Down:Connect(function() svDrag = true end)
-				UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then svDrag=false hueDrag=false end end)
 
 				local hueBtn = create("TextButton", { Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=13, Parent=hueBar })
 				hueBtn.MouseButton1Down:Connect(function() hueDrag = true end)
+
+				UserInputService.InputEnded:Connect(function(i)
+					if i.UserInputType == Enum.UserInputType.MouseButton1 then
+						svDrag = false
+						hueDrag = false
+					end
+				end)
 
 				RunService.RenderStepped:Connect(function()
 					local mp = UserInputService:GetMouseLocation()
@@ -1048,7 +1050,7 @@ function Wave:CreateWindow(config)
 			create("UIStroke", { Color = THEME.Stroke, Thickness = 1 }),
 		})
 
-		local bar = create("Frame", {
+		create("Frame", {
 			Size = UDim2.new(0, 3, 0.7, 0),
 			Position = UDim2.new(0, 0, 0.15, 0),
 			BackgroundColor3 = THEME.Accent,
@@ -1067,6 +1069,7 @@ function Wave:CreateWindow(config)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = nFrame,
 		})
+
 		create("TextLabel", {
 			Text = config.Content or "",
 			Font = Enum.Font.Gotham,
@@ -1095,4 +1098,4 @@ function Wave:CreateWindow(config)
 	return Window
 end
 
-return Wave
+return getgenv().Wave
