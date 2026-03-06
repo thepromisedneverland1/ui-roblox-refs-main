@@ -1,0 +1,130 @@
+local Wave = loadstring(game:HttpGet("https://raw.githubusercontent.com/thepromisedneverland1/ui-roblox-refs-main/refs/heads/main/library.lua"))()
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local Window = Wave:CreateWindow({
+    Name = "Wave Ui Test",
+    Subtitle = "v1.0",
+})
+
+local guiVisible = true
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible
+        Window._main.Visible = guiVisible
+    end
+end)
+
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local EspTab = Window:CreateTab("ESP", 6031280882)
+
+PlayerTab:CreateSection("Movement")
+
+local speedEnabled = false
+local speedConn = nil
+local customSpeedValue = 16
+
+PlayerTab:CreateToggle({
+    Name = "Walkspeed",
+    CurrentValue = false,
+    Flag = "WalkspeedToggle",
+    Callback = function(v)
+        speedEnabled = v
+        if speedConn then speedConn:Disconnect() speedConn = nil end
+        if v then
+            speedConn = RunService.Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.MoveDirection.Magnitude > 0 then
+                    hrp.CFrame = hrp.CFrame + (hum.MoveDirection.Unit * customSpeedValue)
+                end
+            end)
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "Speed Value",
+    Range = {1, 10},
+    Increment = 0.1,
+    CurrentValue = 1,
+    Flag = "WalkspeedValue",
+    Callback = function(v)
+        customSpeedValue = v
+    end,
+})
+
+PlayerTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+    Callback = function(v)
+        getgenv().InfiniteJump = v
+    end,
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().InfiniteJump then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+PlayerTab:CreateSection("Keybind")
+
+PlayerTab:CreateParagraph({
+    Title = "ui keybind",
+    Content = "Press RightShift to hide / show the interface",
+})
+
+EspTab:CreateSection("ESP")
+
+local espHighlights = {}
+
+local function removeEsp()
+    for _, h in pairs(espHighlights) do
+        if h and h.Parent then h:Destroy() end
+    end
+    espHighlights = {}
+end
+
+local function addEsp(color)
+    removeEsp()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local h = Instance.new("Highlight")
+            h.Name = "WaveESP"
+            h.FillColor = color or Color3.fromRGB(0, 170, 230)
+            h.OutlineColor = color or Color3.fromRGB(0, 170, 230)
+            h.FillTransparency = 0.6
+            h.OutlineTransparency = 0
+            h.Parent = plr.Character
+            espHighlights[plr.Name] = h
+        end
+    end
+end
+
+EspTab:CreateToggle({
+    Name = "ESP All",
+    CurrentValue = false,
+    Flag = "EspAll",
+    Callback = function(v)
+        if v then
+            addEsp(getgenv().EspColor)
+        else
+            removeEsp()
+        end
+    end,
+})
+
+Window:Notify({
+    Title = "Wave",
+    Content = "so tuff !",
+    Duration = 4,
+})
