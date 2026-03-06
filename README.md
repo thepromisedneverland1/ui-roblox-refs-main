@@ -1,2 +1,5 @@
-for myself
-fixed color picker , gui not loading , gui overlaps
+# Readme
+
+That's some ui that I made wich is supposed to be Wave.
+
+
